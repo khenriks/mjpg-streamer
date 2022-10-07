@@ -299,7 +299,7 @@ int input_init(input_parameter *param, int plugin_no)
     if (settings->fps){
         frame_time = 1000000 / settings->fps;
         // Set frame rate
-	    controls_.set(controls::FrameDurationLimits, libcamera::Span<const int64_t, 2>({ frame_time, frame_time }));
+        controls_.set(controls::FrameDurationLimits, { frame_time, frame_time });
         controls_flag = true;
     }
     if (settings->br) {
