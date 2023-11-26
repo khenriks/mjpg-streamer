@@ -356,7 +356,6 @@ int input_init(input_parameter *param, int plugin_no)
     return 0;
     
 fatal_error:
-    worker_cleanup(in);
     closelog();
     exit(EXIT_FAILURE);
 }
@@ -372,16 +371,20 @@ int input_stop(int id)
     input * in = &pglobal->in[id];
     context *pctx = (context*)in->context;
 
-    free(pctx->videoIn);
+    if (pctx != NULL) {
+        free(pctx->videoIn);
+
+        DBG("will cancel input thread\n");
+        pthread_cancel(pctx->worker);
+    }
+
+    delete pctx;
+    in->context = NULL;
 
     free(in->buf);
     in->buf = NULL;
     in->size = 0;
 
-    if (pctx != NULL) {
-        DBG("will cancel input thread\n");
-        pthread_cancel(pctx->worker);
-    }
     return 0;
 }
 
@@ -429,7 +432,6 @@ void switch_resolution(input *in, uint32_t width, uint32_t height, int rotation,
     }
     return;
 fatal_error:
-    worker_cleanup(in);
     closelog();
     exit(EXIT_FAILURE);
 }
@@ -448,9 +450,6 @@ void *worker_thread(void *arg)
     uint32_t buffercount = settings->buffercount;
     int rotation = settings->rotation;
 
-    /* set cleanup handler to cleanup allocated resources */
-    pthread_cleanup_push(worker_cleanup, arg);
-    
     free(settings);
     pctx->init_settings = NULL;
     settings = NULL;
@@ -491,25 +490,7 @@ void *worker_thread(void *arg)
     pctx->camera.stopCamera();
     pctx->camera.closeCamera();
 
-    IPRINT("leaving input thread, calling cleanup function now\n");
-    pthread_cleanup_pop(1);
-
     return NULL;
-}
-
-/******************************************************************************
-Description.: this functions cleans up allocated resources
-Input Value.: arg is unused
-Return Value: -
-******************************************************************************/
-void worker_cleanup(void *arg)
-{
-    input * in = (input*)arg;
-    if (in->context != NULL) {
-        context *pctx = (context*)in->context;
-        delete pctx;
-        in->context = NULL;
-    }
 }
 
 /******************************************************************************
