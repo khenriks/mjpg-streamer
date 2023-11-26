@@ -27,7 +27,7 @@
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 #include <libcamera/formats.h>
-#include <libcamera/transform.h>
+#include <libcamera/orientation.h>
 
 using namespace libcamera;
 
